@@ -36,7 +36,15 @@ checkpoint:
 If you encounter out of memory issues, try a lower `batch_size` parameter in the config file.
 
 NB: if you would rather not use docker, you could create a [conda](https://docs.conda.io/en/latest/) environment via following the steps in the Dockerfile and mixing `conda` and `pip` at your own risks...
+## Cuda 11
 
+- If you must use a CUDA11, you should install this version of torch and torchvision.
+
+```
+pip3 install --pre torch  -f https://download.pytorch.org/whl/nightly/cu111/torch-1.11.0.dev20211017%2Bcu111-cp36-cp36m-linux_x86_64.whl -U
+pip3 install --pre torchvision -f https://download.pytorch.org/whl/nightly/cu111/torchvision-0.12.0.dev20211017%2Bcu111-cp36-cp36m-linux_x86_64.whl -U
+
+```
 ## Datasets
 
 Datasets are assumed to be downloaded in `/data/datasets/<dataset-name>` (can be a symbolic link).
@@ -128,10 +136,6 @@ python3 scripts/infer.py --checkpoint <checkpoint.ckpt> --input <image or folder
 
 All experiments followed the [Eigen et al.](https://arxiv.org/abs/1406.2283), with [Zhou et al](https://people.eecs.berkeley.edu/~tinghuiz/projects/SfMLearner/)'s preprocessing to remove static training frames. 
 
-
-## License
-
-The source code is released under the [MIT license](LICENSE.md).
 
 ## References
 
