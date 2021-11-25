@@ -1,0 +1,29 @@
+model:
+    name: 'VelSupModel'
+    depth_net:
+        name: 'TransDSSL'
+        version: '1A'
+        infer: True
+    pose_net:
+        name: 'PoseNet'
+        version: ''
+    params:
+        crop: ''
+        min_depth: 0.0
+        max_depth: 200.0
+datasets:
+    augmentation:
+        image_shape: (384, 640)
+    test:
+        dataset: ['DGP']
+        path: ['/data/datasets/DDAD/ddad.json']
+        split: ['val']
+        depth_type: ['lidar']
+        cameras: [['camera_01']]
+save:
+    folder: '/data/save'
+    depth:
+        rgb: True
+        viz: True
+        npz: True
+        png: True

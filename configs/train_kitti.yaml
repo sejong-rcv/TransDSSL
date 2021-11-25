@@ -1,0 +1,52 @@
+model:
+    name: 'VelSupModel'
+    optimizer:
+        
+        name: 'AdamW'
+        transdssl:
+            lr: 1e-5
+        depth:
+            lr: 6e-5
+        pose:
+            lr: 1e-4
+    scheduler:
+        name: 'StepLR'
+        step_size: 15
+        gamma: 0.5
+    depth_net:
+        name: 'TransDSSL'
+        version: '1A'
+    pose_net:
+        name: 'PoseNet'
+        version: ''
+    params:
+        crop: 'garg'
+        min_depth: 0.0
+        max_depth: 80.0
+    loss:
+        supervised_method : 'sparse-berhu'
+        num_scales: 1
+        supervised_num_scales : 1
+datasets:
+    augmentation:
+        image_shape: (192, 640)
+    train:
+        batch_size: 4
+        num_workers: 16
+        dataset: ['KITTI']
+        path: ['/data/datasets/KITTI_raw']
+        split: ['data_splits/eigen_zhou_files.txt']
+        
+        depth_type: ['velodyne']
+        repeat: [1]
+    validation:
+        dataset: ['KITTI']
+        path: ['/data/datasets/KITTI_raw']
+        split: ['data_splits/eigen_test_files.txt']
+        depth_type: ['velodyne']
+    test:
+        dataset: ['KITTI']
+        path: ['/data/datasets/KITTI_raw']
+        split: ['data_splits/eigen_test_files.txt']
+        depth_type: ['velodyne']
+
