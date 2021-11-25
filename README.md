@@ -36,7 +36,7 @@ checkpoint:
 If you encounter out of memory issues, try a lower `batch_size` parameter in the config file.
 
 NB: if you would rather not use docker, you could create a [conda](https://docs.conda.io/en/latest/) environment via following the steps in the Dockerfile and mixing `conda` and `pip` at your own risks...
-## Cuda 11
+### Cuda 11
 
 - If you must use a CUDA11, you should install this version of torch and torchvision.
 
@@ -45,6 +45,12 @@ pip3 install --pre torch  -f https://download.pytorch.org/whl/nightly/cu111/torc
 pip3 install --pre torchvision -f https://download.pytorch.org/whl/nightly/cu111/torchvision-0.12.0.dev20211017%2Bcu111-cp36-cp36m-linux_x86_64.whl -U
 
 ```
+### horovod
+- After installing the torch or making docker-container, you must install horovod.
+```
+pip install horovod
+```
+
 ## Datasets
 
 Datasets are assumed to be downloaded in `/data/datasets/<dataset-name>` (can be a symbolic link).
