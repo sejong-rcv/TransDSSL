@@ -96,7 +96,7 @@ class KITTIDataset(Dataset):
         self.with_depth = depth_type is not '' and depth_type is not None
         self.with_pose = with_pose
         if self.with_depth:
-            gt_path = os.path.join("/raid/datasets/KITTI_raw/data_splits/gt_depths.npz")
+            gt_path = os.path.join("/data/datasets/KITTI_raw/data_splits/gt_depths.npz")
             self.gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1',allow_pickle=True)["data"]
 
         self.input_depth_type = input_depth_type

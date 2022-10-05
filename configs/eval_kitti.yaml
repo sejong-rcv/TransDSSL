@@ -17,7 +17,7 @@ datasets:
         image_shape: (192, 640)
     test:
         dataset: ['KITTI']
-        path: ['/raid/datasets/KITTI_raw']
+        path: ['/data/datasets/KITTI_raw']
         split: ['data_splits/eigen_test_files.txt']
         depth_type: ['velodyne']
 save:
