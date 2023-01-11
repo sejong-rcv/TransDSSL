@@ -26,7 +26,7 @@ class PoseResNet(nn.Module):
         super().__init__()
         assert version is not None, "PoseResNet needs a version"
 
-        num_layers = 18     # First two characters are the number of layers
+        num_layers = 50     # First two characters are the number of layers
         pretrained = True#version[2:] == 'pt'    # If the last characters are "pt", use ImageNet pretraining
         assert num_layers in [18, 34, 50], 'ResNet version {} not available'.format(num_layers)
 

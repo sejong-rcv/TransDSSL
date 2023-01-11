@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Set default shell to /bin/bash
 SHELL ["/bin/bash", "-cu"]
-
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys A4B469963BF863CC
 RUN apt-get update && apt-get install -y --allow-downgrades --allow-change-held-packages --no-install-recommends \
     build-essential \
     cmake \
@@ -75,14 +75,14 @@ RUN if [[ "${PYTHON_VERSION}" == "3.6" ]]; then \
 
 RUN ln -sf /usr/bin/python${PYTHON_VERSION} /usr/bin/python
 
-RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
+RUN curl -O https://bootstrap.pypa.io/pip/3.6/get-pip.py  && \
     python get-pip.py && \
     rm get-pip.py
 RUN pip install --upgrade pip
 # Install Pydata and other deps
 RUN pip install future typing numpy pandas matplotlib jupyter h5py \
     awscli boto3 tqdm termcolor path.py pillow-simd opencv-python-headless \
-    mpi4py onnx onnxruntime pycuda yacs cython==0.29.10
+    mpi4py onnx==1.8.1 onnxruntime pycuda yacs cython==0.29.10
 
 # Install PyTorch
 RUN pip install torch==${PYTORCH_VERSION} \

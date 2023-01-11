@@ -174,7 +174,7 @@ class WandbLogger:
     def log_depth_train(self, output):
         # def log(prefix_idx, batch, output):
         prefix_idx="train_inv_depth"
-         
+        # import pdb;pdb.set_trace()
         self._metrics.update(log_inv_depth('inv_depths', prefix_idx, output["inv_depths"][0]))
         self.experiment.log(self._metrics)
         self._metrics.clear()

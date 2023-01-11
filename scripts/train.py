@@ -47,10 +47,10 @@ def train(file):
         if os.path.isdir(source_dir) is False:
             os.makedirs(source_dir)
         tar = tarfile.open( os.path.join(source_dir, 'sources.tar'), 'w' )
-         
+        # import pdb;pdb.set_trace()
         tar.add( 'packnet_sfm' )
         tar.add( 'configs' )
-        tar.add( 'transdssl' )
+        tar.add( 'dpt' )
         tar.add( 'scripts' )
         tar.close()
     # Wandb Logger

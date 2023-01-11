@@ -71,13 +71,13 @@ class SfmModel(BaseModel):
         batch_input = {key: batch[key] for key in filter_dict(batch, self._input_keys)}
         if flip:
             # Run depth network with flipped inputs
-             
+            # import pdb;pdb.set_trace()
             output = self.depth_net(**flip_batch_input(batch_input), epoch=epoch)
             # Flip output back if training
             output = flip_output(output)
         else:
             # Run depth network
-             
+            # import pdb;pdb.set_trace()
             output = self.depth_net(**batch_input, epoch=epoch)
         return output
 

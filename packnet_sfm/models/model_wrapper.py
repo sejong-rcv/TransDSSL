@@ -22,7 +22,6 @@ from packnet_sfm.models.model_utils import stack_batch
 
 from transdssl.transdsslmodels_attn import TRANSDSSLDepthModel
 
-
 class WarmupConstantSchedule(torch.optim.lr_scheduler.LambdaLR):
     """ Linear warmup and then constant.
         Linearly increases learning rate schedule from 0 to 1 over `warmup_steps` training steps.
@@ -39,6 +38,7 @@ class WarmupConstantSchedule(torch.optim.lr_scheduler.LambdaLR):
             return 1.
 
         super(WarmupConstantSchedule, self).__init__(optimizer, lr_lambda, last_epoch=last_epoch)
+
 
 class ModelWrapper(torch.nn.Module):
     """
@@ -71,8 +71,7 @@ class ModelWrapper(torch.nn.Module):
         self.model = self.optimizer = self.scheduler = None
         self.train_dataset = self.validation_dataset = self.test_dataset = None
         self.current_epoch = 0
-        self.min_depth=config.model.params.min_depth
-        self.max_depth=config.model.params.max_depth
+
         # Prepare model
         self.prepare_model(resume)
 
@@ -164,11 +163,11 @@ class ModelWrapper(torch.nn.Module):
                 **filter_args(optimizer, self.config.model.optimizer.depth)
             })
         params.append({
-            'name' : 'transdssl',
+            'name' : 'dpt',
             'params' : self.depth_net.scratch.parameters(),
-            **filter_args(optimizer, {'lr':self.config.model.optimizer.transdssl.lr})
+            **filter_args(optimizer, {'lr':6e-5})
         })
-       
+        # {'lr':6e-5, 'weight_decay':0.002}
         # Pose optimizer
         if self.pose_net is not None:
             params.append({
@@ -182,12 +181,15 @@ class ModelWrapper(torch.nn.Module):
 
         # Load and initialize scheduler
         
+        # scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=6e-5, 
+        #                                                 steps_per_epoch=1, epochs=30,
+        #                                                 anneal_strategy='cos',
+        #                                                 pct_start=0.15)
         if "WarmUP" in self.config.model.scheduler.name:
-            scheduler = WarmupConstantSchedule(optimizer, warmup_steps=5)
+            scheduler = WarmupConstantSchedule(optimizer, warmup_steps=3)
         else:
             scheduler = getattr(torch.optim.lr_scheduler, self.config.model.scheduler.name)
             scheduler = scheduler(optimizer, **filter_args(scheduler, self.config.model.scheduler))
-        # scheduler = scheduler(optimizer, **filter_args(scheduler, self.config.model.scheduler))
 
         if self.resume:
             if 'optimizer' in self.resume:
@@ -334,7 +336,7 @@ class ModelWrapper(torch.nn.Module):
         """Evaluate batch to produce depth metrics."""
         # Get predicted depth
         inv_depths = self.model(batch)['inv_depths']
-        depth = inv2depth(inv_depths[0],self.min_depth,self.max_depth)
+        depth = inv2depth(inv_depths[0])
         # Post-process predicted depth
         batch['rgb'] = flip_lr(batch['rgb'])
         if 'input_depth' in batch:
@@ -342,7 +344,7 @@ class ModelWrapper(torch.nn.Module):
         inv_depths_flipped = self.model(batch)['inv_depths']
         inv_depth_pp = post_process_inv_depth(
             inv_depths[0], inv_depths_flipped[0], method='mean')
-        depth_pp = inv2depth(inv_depth_pp,self.min_depth,self.max_depth)
+        depth_pp = inv2depth(inv_depth_pp)
         batch['rgb'] = flip_lr(batch['rgb'])
         # Calculate predicted metrics
         metrics = OrderedDict()
@@ -440,18 +442,12 @@ def setup_depth_net(config, prepared, **kwargs):
     depth_net : nn.Module
         Create depth network
     """
+    # import pdb;pdb.set_trace()
     print0(pcolor('DepthNet: %s' % config.name, 'yellow'))
-
-    if config.name=="TransDSSL" :
-        depth_net = TRANSDSSLDepthModel(
-            backbone="S",infer=config.infer
-        )
-    else:
-        depth_net = load_class_args_create(config.name,
-            paths=['packnet_sfm.networks.depth',],
-            args={**config, **kwargs},)
-
-
+    depth_net = TRANSDSSLDepthModel(
+        backbone="S",
+        infer=False,
+    ) 
     if not prepared and config.checkpoint_path is not '':
         depth_net = load_network(depth_net, config.checkpoint_path,
                                  ['depth_net', 'disp_network'])
@@ -581,13 +577,6 @@ def setup_dataset(config, mode, requirements, **kwargs):
                 config.path[i], config.split[i],
                 **dataset_args, **dataset_args_i,
                 cameras=config.cameras[i],
-            )
-        # Image dataset
-        elif config.dataset[i] == 'CITY':
-            from packnet_sfm.datasets.city_dataset import CITYDataset
-            dataset = CITYDataset(
-                config.path[i], config.split[i],
-                **dataset_args, **dataset_args_i,
             )
         # Image dataset
         elif config.dataset[i] == 'Image':

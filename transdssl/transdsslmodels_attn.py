@@ -10,9 +10,9 @@ from .blocks import (
     _make_scratch,
 )
 
-from transdssl.swintf import SwinTransformer
+from dpt.swintf import SwinTransformer
 
-def _make_fusion_block(features, use_norm, onlyATT=False):
+def _make_fusion_block(features, use_norm, scale=1):
     return FeatureFusionBlock_custom(
         features,
         nn.ReLU(False),
@@ -20,6 +20,7 @@ def _make_fusion_block(features, use_norm, onlyATT=False):
         layer_norm=use_norm,
         expand=False,
         align_corners=True,
+        scale=scale,
     )
 
 
@@ -30,13 +31,12 @@ class TransDSSL(BaseModel):
         infer=False,
         features=256,
         backbone="S",
-        channels_last=False,
         use_norm=False,
     ):
         non_negative = True
         super(TransDSSL, self).__init__()
         self.infer=infer
-        self.channels_last = channels_last
+
         if backbone=="L":
             #############Swin-L#############################
             self.scratch = _make_scratch(
@@ -104,7 +104,7 @@ class TransDSSL(BaseModel):
                                     use_checkpoint=False
                                 )
             ch=torch.load("pretrained_model/swin_tiny_patch4_window7_224.pth")
-
+            
         st=self.Swin.state_dict()
         st_keys=list(st.keys()) 
 
@@ -137,7 +137,7 @@ class TransDSSL(BaseModel):
             print("Can't find Keys")
         
         
-        print("################### Load State_dict [Swin_transformer] ############################## Swin-",backbone)
+        print("################### Load State_dict [Swin_transformer] ##############################")
 
         self.Swin.load_state_dict(st)
 
@@ -164,18 +164,20 @@ class TransDSSL(BaseModel):
 
         self.scratch.output_conv = head
 
+
     def forward(self, x, epoch=0):
 
-
         _, layer_1, layer_2, layer_3, layer_4 = self.Swin(x)
-
+        
         layer_1_rn = self.scratch.layer1_rn(layer_1)
         layer_2_rn = self.scratch.layer2_rn(layer_2)
         layer_3_rn = self.scratch.layer3_rn(layer_3)
         layer_4_rn = self.scratch.layer4_rn(layer_4)
         
-        path_4 = self.scratch.refinenet4(layer_4_rn)        
+        path_4 = self.scratch.refinenet4(layer_4_rn)
+        
         path_3 = self.scratch.refinenet3(path_4, layer_3_rn)
+        
         if not self.infer:
             disp_4 = self.scratch.output_conv4(path_3)
             disp_4=self.attn_depth(disp_4)
@@ -185,11 +187,11 @@ class TransDSSL(BaseModel):
             disp_3 = self.scratch.output_conv3(path_2)
             disp_3=self.attn_depth(disp_3)
         
-        path_1 = self.scratch.refinenet1(path_2, layer_1_rn)        
+        path_1 = self.scratch.refinenet1(path_2, layer_1_rn)
         
         disp_2 = self.scratch.output_conv2(path_1)
-        disp_2 = self.attn_depth(disp_2)
-        
+        disp_2=self.attn_depth(disp_2)
+
         if not self.infer:
             layer_0_rn = self.upsample(layer_1_rn)
             path_0 = self.scratch.refinenet0(path_1, layer_0_rn)
@@ -201,25 +203,31 @@ class TransDSSL(BaseModel):
             
             return [disp_2] 
 
+
 class TRANSDSSLDepthModel(TransDSSL):
-    def __init__(
-        self, path=None,infer=False,   **kwargs    ):
+    def __init__(self, path=None, infer=False, **kwargs):
         features = kwargs["features"] if "features" in kwargs else 256
-        self.infer=infer
+
+        self.infer = infer
+
         head = nn.Sequential(
             nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
             nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
         )
-
         super().__init__(head,infer, **kwargs)
 
         if path is not None:
             self.load(path)
 
     def forward(self, rgb, epoch=0):
+
         x=rgb
-        inv_depth = super().forward(x, epoch=epoch)        
+        
+        inv_depth = super().forward(x, epoch=epoch)
+
         output={}
-       
         output["inv_depths"]=inv_depth
+    
         return output
+
+

@@ -1,4 +1,27 @@
-## TransDSSL: Transformer based Depth Estimation via Self-Supervised Learning
+## [TransDSSL: Transformer based Depth Estimation via Self-Supervised Learning](https://ieeexplore.ieee.org/document/9851497/)
+[![IEEE RA-L 2022](https://img.shields.io/badge/-IEEE%20RA--L%202021-blue)](https://ieeexplore.ieee.org/document/9851497) [![Star on GitHub](https://img.shields.io/github/stars/sejong-rcv/2021.Paper.TransDSSL.svg?style=social)](https://github.com/sejong-rcv/2021.Paper.TransDSSL/stargazers)
+
+## Abstract     
+Recently, transformers have been widely adopted for various computer vision tasks and show promising results due to their ability to encode long-range spatial dependencies in an image effectively. However, very few studies on adopting transformers in self-supervised depth estimation have been conducted. When replacing the CNN architecture with the transformer in self-supervised learning of depth, we encounter several problems such as problematic multi-scale photometric loss function when used with transformers and, insufficient ability to capture local details. In this letter, we propose an attention-based decoder module, Pixel-Wise Skip Attention (PWSA), to enhance fine details in feature maps while keeping global context from transformers. In addition, we propose utilizing self-distillation loss with single-scale photometric loss to alleviate the instability of transformer training by using correct training signals. We demonstrate that the proposed model performs accurate predictions on large objects and thin structures that require global context and local details. Our model achieves state-of-the-art performance among the self-supervised monocular depth estimation methods on KITTI and DDAD benchmarks.
+
+
+## Contents
+
+- [Install](#Install)
+    - [Cuda 11](#Cuda-11)
+    - [horovod](#horovod)
+- [Datasets](#Datasets)
+    - [Dense Depth for Autonomous Driving (DDAD)](#Dense-Depth-for-Autonomous-Driving-(DDAD))
+    - [KITTI](#KITTI)
+- [Swin Transformer(Pretrained-model)](#Swin-Transformer(Pretrained-model))
+- [Evaluation](#Evaluation)
+- [Models](#Models)
+    - [DDAD](#DDAD)
+    - [KITTI](#KITTI)
+- [Acknowledgement](#Acknowledgement)
+- [References](#References)
+
+
 
 ## Install
 

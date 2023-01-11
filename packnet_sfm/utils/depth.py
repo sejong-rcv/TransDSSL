@@ -100,7 +100,7 @@ def viz_inv_depth(inv_depth, normalizer=None, percentile=95,
     return cm(np.clip(inv_depth, 0., 1.0))[:, :, :3]
 
 
-def inv2depth(inv_depth,min_depth=0.1,max_depth=80):
+def inv2depth(inv_depth):
     """
     Invert an inverse depth map to produce a depth map
 
@@ -117,12 +117,7 @@ def inv2depth(inv_depth,min_depth=0.1,max_depth=80):
     if is_seq(inv_depth):
         return [inv2depth(item) for item in inv_depth]
     else:
-        # min_disp=1/max_depth
-        # max_disp=1/min_depth
-        # scaled_disp = min_disp + (max_disp - min_disp) * inv_depth
-        # return 1 / scaled_disp
         return 1. / inv_depth.clamp(min=1e-6)
-
 
 
 def depth2inv(depth):
@@ -285,7 +280,6 @@ def compute_depth_metrics(config, gt, pred, use_gt_scale=True):
     # Initialize variables
     batch_size, _, gt_height, gt_width = gt.shape
     abs_diff = abs_rel = sq_rel = rmse = rmse_log = a1 = a2 = a3 = 0.0
-     
     # Interpolate predicted depth to ground-truth resolution
     pred = scale_depth(pred, gt, config.scale_output)
     # If using crop

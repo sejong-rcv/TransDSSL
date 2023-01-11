@@ -14,7 +14,7 @@ cfg.debug = False   # Debugging flag
 cfg.arch = CN()
 cfg.arch.seed = 42                      # Random seed for Pytorch/Numpy initialization
 cfg.arch.min_epochs = 1                 # Minimum number of epochs
-cfg.arch.max_epochs = 23                # Maximum number of epochs
+cfg.arch.max_epochs = 30                # Maximum number of epochs
 cfg.arch.validate_first = False         # Validate before training starts
 ########################################################################################################################
 ### CHECKPOINT
@@ -58,9 +58,6 @@ cfg.model.checkpoint_path = ''              # Checkpoint path for model saving
 ########################################################################################################################
 cfg.model.optimizer = CN()
 cfg.model.optimizer.name = 'Adam'               # Optimizer name
-cfg.model.optimizer.transdssl = CN()
-cfg.model.optimizer.transdssl.lr = 6e-5        # Depth learning rate
-cfg.model.optimizer.transdssl.weight_decay = 0.0    # Dept weight decay
 cfg.model.optimizer.depth = CN()
 cfg.model.optimizer.depth.lr = 0.0002           # Depth learning rate
 cfg.model.optimizer.depth.weight_decay = 0.0    # Dept weight decay
@@ -118,7 +115,6 @@ cfg.model.depth_net.name = ''               # Depth network name
 cfg.model.depth_net.checkpoint_path = ''    # Depth checkpoint filepath
 cfg.model.depth_net.version = ''            # Depth network version
 cfg.model.depth_net.dropout = 0.0           # Depth network dropout
-cfg.model.depth_net.infer = False           # Depth network dropout
 ########################################################################################################################
 ### MODEL.POSE_NET
 ########################################################################################################################

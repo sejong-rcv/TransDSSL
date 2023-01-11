@@ -1,10 +1,8 @@
-
 model:
     name: 'VelSupModel'
     depth_net:
-        name: 'TransDSSL'
+        name: 'DPT'
         version: '1A'
-        infer: True
     pose_net:
         name: 'PoseNet'
         version: ''
@@ -17,7 +15,7 @@ datasets:
         image_shape: (192, 640)
     test:
         dataset: ['KITTI']
-        path: ['/data/datasets/KITTI_raw']
+        path: ['/raid/datasets/KITTI_raw']
         split: ['data_splits/eigen_test_files.txt']
         depth_type: ['velodyne']
 save:

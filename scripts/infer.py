@@ -11,10 +11,8 @@ from cv2 import imwrite
 from packnet_sfm.models.model_wrapper import ModelWrapper
 from packnet_sfm.datasets.augmentations import resize_image, to_tensor
 from packnet_sfm.utils.horovod import hvd_init, rank, world_size, print0
-from packnet_sfm.utils.image import load_image, interpolate_image
+from packnet_sfm.utils.image import load_image
 from packnet_sfm.utils.config import parse_test_file
-from packnet_sfm.utils.depth import inv2depth, post_process_inv_depth, compute_depth_metrics
-from packnet_sfm.utils.image import flip_lr
 from packnet_sfm.utils.load import set_debug
 from packnet_sfm.utils.depth import write_depth, inv2depth, viz_inv_depth
 from packnet_sfm.utils.logging import pcolor
@@ -34,7 +32,7 @@ def parse_args():
                         help='Input and output image shape '
                              '(default: checkpoint\'s config.datasets.augmentation.image_shape)')
     parser.add_argument('--half', action="store_true", help='Use half precision (fp16)')
-    parser.add_argument('--save', type=str, choices=['npz', 'png',"viz"], default=None,
+    parser.add_argument('--save', type=str, choices=['npz', 'png'], default=None,
                         help='Save format (npz or png). Default is None (no depth map is saved).')
     args = parser.parse_args()
     assert args.checkpoint.endswith('.ckpt'), \
@@ -86,20 +84,15 @@ def infer_and_save_depth(input_file, output_file, model_wrapper, image_shape, ha
         image = image.to('cuda:{}'.format(rank()), dtype=dtype)
 
     # Depth inference (returns predicted inverse depth)
-    image_flip = flip_lr(image)
-    
     pred_inv_depth = model_wrapper.depth(image)['inv_depths'][0]
-    pred_inv_depth_flip = model_wrapper.depth(image_flip)['inv_depths'][0]
-    inv_depth_pp = post_process_inv_depth(pred_inv_depth, pred_inv_depth_flip, method='mean')
-    inv_depth_pp_resize=interpolate_image(inv_depth_pp, (352,1216), mode='bilinear', align_corners=True)
+
     if save == 'npz' or save == 'png':
         # Get depth from predicted depth map and save to different formats
         filename = '{}.{}'.format(os.path.splitext(output_file)[0], save)
         print('Saving {} to {}'.format(
             pcolor(input_file, 'cyan', attrs=['bold']),
             pcolor(filename, 'magenta', attrs=['bold'])))
-        write_depth(filename, depth=inv2depth(inv_depth_pp_resize))
-         
+        write_depth(filename, depth=inv2depth(pred_inv_depth))
     else:
         # Prepare RGB image
         rgb = image[0].permute(1, 2, 0).detach().cpu().numpy() * 255

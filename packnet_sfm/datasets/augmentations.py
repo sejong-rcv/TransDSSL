@@ -372,9 +372,8 @@ def crop_intrinsics(intrinsics, borders):
         Cropped intrinsics matrix
     """
     intrinsics = np.copy(intrinsics)
-    # intrinsics[0, 2] -= borders[0]
-    intrinsics[1, 2] *= 1.0/0.75
-    # intrinsics[1, 1] *= 1.0/0.75
+    intrinsics[0, 2] -= borders[0]
+    intrinsics[1, 2] -= borders[1]
     return intrinsics
 
 
@@ -417,8 +416,6 @@ def crop_sample_input(sample, borders):
         Cropped sample
     """
     # Crop intrinsics
-    width,height=sample["rgb"].size
-    borders=(0,0,width,int(height*0.75))
     for key in filter_dict(sample, [
         'intrinsics'
     ]):
@@ -431,7 +428,6 @@ def crop_sample_input(sample, borders):
         'rgb', 'rgb_original', 'warped_rgb',
     ]):
         sample[key] = crop_image(sample[key], borders)
-
     # Crop context images
     for key in filter_dict(sample, [
         'rgb_context', 'rgb_context_original',

@@ -103,7 +103,7 @@ class PackNet01(nn.Module):
                 if m.bias is not None:
                     m.bias.data.zero_()
 
-    def forward(self, rgb,epoch=0):
+    def forward(self, rgb):
         """
         Runs the network and returns inverse depth maps
         (4 scales if training and 1 if not).
@@ -181,5 +181,5 @@ class PackNet01(nn.Module):
             }
         else:
             return {
-                'inv_depths': [disp1],
+                'inv_depths': disp1,
             }

@@ -56,19 +56,22 @@ class HorovodTrainer(BaseTrainer):
         if self.validate_first:
             validation_output = self.validate(val_dataloaders, module)
             self.check_and_save(module, validation_output)
-
-        # Epoch loop        
+        
         for epoch in range(module.current_epoch, self.max_epochs):
             old_lr = optimizer.state_dict()['param_groups'][1]['lr']
-            # if epoch >=3:
-                # scheduler.step(epoch)
+
             scheduler.step(epoch)
             
             lr = optimizer.state_dict()['param_groups'][1]['lr']
+
             tmp_lr = optimizer.state_dict()['param_groups'][0]['lr']
-            print('TransDSSL learning rate %.7f -> %.7f, Swin %.7f' % (old_lr, lr, tmp_lr))
-            # Train            
+            print('DPT learning rate %.7f -> %.7f, Swin %.7f' % (old_lr, lr, tmp_lr))
+            # Train
             self.train(train_dataloader, module, optimizer)
+            # Validation
+            validation_output = self.validate(val_dataloaders, module)
+            # Check and save model
+            self.check_and_save(module, validation_output)
             # Update current epoch
             module.current_epoch += 1
             # Take a scheduler step

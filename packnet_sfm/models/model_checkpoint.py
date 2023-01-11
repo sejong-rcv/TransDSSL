@@ -136,14 +136,7 @@ class ModelCheckpoint:
                 self._do_check_save(filepath, model, current)
         else:
             self._save_model(filepath, model)
-    def save_model(self, model):
-        # Check saving interval
-        epoch = model.current_epoch
-        if self.epoch_last_check is not None and \
-                (epoch - self.epoch_last_check) < self.period:
-            return
-        filepath=self.dirpath+"/{:06d}.ckpt".format(epoch)
-        self._save_model(filepath, model)
+
     def _do_check_save(self, filepath, model, current):
         # List of models to delete
         del_list = []

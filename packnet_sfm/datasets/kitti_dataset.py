@@ -1,18 +1,13 @@
 # Copyright 2020 Toyota Research Institute.  All rights reserved.
-
 import glob
 import numpy as np
 import os
-
 from torch.utils.data import Dataset
-
 from packnet_sfm.datasets.kitti_dataset_utils import \
     pose_from_oxts_packet, read_calib_file, transform_from_rot_trans
 from packnet_sfm.utils.image import load_image
 from packnet_sfm.geometry.pose_utils import invert_pose_numpy
-
 ########################################################################################################################
-
 # Cameras from the stero pair (left is the origin)
 IMAGE_FOLDER = {
     'left': 'image_02',
@@ -26,16 +21,13 @@ CALIB_FILE = {
 }
 PNG_DEPTH_DATASETS = ['groundtruth']
 OXTS_POSE_DATA = 'oxts'
-
 ########################################################################################################################
 #### FUNCTIONS
 ########################################################################################################################
-
 def read_npz_depth(file, depth_type):
     """Reads a .npz depth map given a certain depth_type."""
     depth = np.load(file)[depth_type + '_depth'].astype(np.float32)
     return np.expand_dims(depth, axis=2)
-
 def read_png_depth(file):
     """Reads a .png depth map."""
     depth_png = np.array(load_image(file), dtype=int)
@@ -43,15 +35,12 @@ def read_png_depth(file):
     depth = depth_png.astype(np.float) / 256.
     depth[depth_png == 0] = -1.
     return np.expand_dims(depth, axis=2)
-
 ########################################################################################################################
 #### DATASET
 ########################################################################################################################
-
 class KITTIDataset(Dataset):
     """
     KITTI dataset class.
-
     Parameters
     ----------
     root_dir : str
@@ -77,41 +66,34 @@ class KITTIDataset(Dataset):
                  data_transform=None, depth_type=None, input_depth_type=None,
                  with_pose=False, back_context=0, forward_context=0, strides=(1,)):
         # Assertions
+
         backward_context = back_context
         assert backward_context >= 0 and forward_context >= 0, 'Invalid contexts'
-
         self.backward_context = backward_context
         self.backward_context_paths = []
         self.forward_context = forward_context
         self.forward_context_paths = []
-
         self.with_context = (backward_context != 0 or forward_context != 0)
         self.split = file_list.split('/')[-1].split('.')[0]
-
         self.train = train
         self.root_dir = root_dir
         self.data_transform = data_transform
-
         self.depth_type = depth_type
         self.with_depth = depth_type is not '' and depth_type is not None
         self.with_pose = with_pose
         if self.with_depth:
             gt_path = os.path.join("/data/datasets/KITTI_raw/data_splits/gt_depths.npz")
             self.gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1',allow_pickle=True)["data"]
-
         self.input_depth_type = input_depth_type
         self.with_input_depth = input_depth_type is not '' and input_depth_type is not None
-
         self._cache = {}
         self.pose_cache = {}
         self.oxts_cache = {}
         self.calibration_cache = {}
         self.imu2velo_calib_cache = {}
         self.sequence_origin_cache = {}
-
         with open(file_list, "r") as f:
             data = f.readlines()
-
         self.paths = []
         # Get file list from data
         for i, fname in enumerate(data):
@@ -127,7 +109,6 @@ class KITTIDataset(Dataset):
                 add_flag = depth is not None and os.path.exists(depth)
             if add_flag:
                 self.paths.append(path)
-
         # If using context, filter file list
         if self.with_context:
             paths_with_context = []
@@ -141,20 +122,16 @@ class KITTIDataset(Dataset):
                         self.forward_context_paths.append(forward_context_idxs)
                         self.backward_context_paths.append(backward_context_idxs[::-1])
             self.paths = paths_with_context
-
 ########################################################################################################################
-
     @staticmethod
     def _get_next_file(idx, file):
         """Get next file given next idx and current file."""
         base, ext = os.path.splitext(os.path.basename(file))
         return os.path.join(os.path.dirname(file), str(idx).zfill(len(base)) + ext)
-
     @staticmethod
     def _get_parent_folder(image_file):
         """Get the parent folder from image_file."""
         return os.path.abspath(os.path.join(image_file, "../../../.."))
-
     @staticmethod
     def _get_intrinsics(image_file, calib_data):
         """Get intrinsics from the calib_data dictionary."""
@@ -162,16 +139,13 @@ class KITTIDataset(Dataset):
             # Check for both cameras, if found replace and return intrinsics
             if IMAGE_FOLDER[cam] in image_file:
                 return np.reshape(calib_data[IMAGE_FOLDER[cam].replace('image', 'P_rect')], (3, 4))[:, :3]
-
     @staticmethod
     def _read_raw_calib_file(folder):
         """Read raw calibration files from folder."""
         return read_calib_file(os.path.join(folder, CALIB_FILE['cam2cam']))
-
 ########################################################################################################################
 #### DEPTH
 ########################################################################################################################
-
     def _read_depth(self, depth_file):
         """Get the depth map from a file."""
         if depth_file.endswith('.npz'):
@@ -195,12 +169,10 @@ class KITTIDataset(Dataset):
                 if depth_type not in PNG_DEPTH_DATASETS:
                     depth_file = depth_file.replace('png', 'npz')
                 return depth_file
-
     def _get_sample_context(self, sample_name,
                             backward_context, forward_context, stride=1):
         """
         Get a sample context
-
         Parameters
         ----------
         sample_name : str
@@ -211,7 +183,6 @@ class KITTIDataset(Dataset):
             Size of forward context
         stride : int
             Stride value to consider when building the context
-
         Returns
         -------
         backward_context : list of int
@@ -222,19 +193,16 @@ class KITTIDataset(Dataset):
         base, ext = os.path.splitext(os.path.basename(sample_name))
         parent_folder = os.path.dirname(sample_name)
         f_idx = int(base)
-
         # Check number of files in folder
         if parent_folder in self._cache:
             max_num_files = self._cache[parent_folder]
         else:
             max_num_files = len(glob.glob(os.path.join(parent_folder, '*' + ext)))
             self._cache[parent_folder] = max_num_files
-
         # Check bounds
         if (f_idx - backward_context * stride) < 0 or (
                 f_idx + forward_context * stride) >= max_num_files:
             return None, None
-
         # Backward context
         c_idx = f_idx
         backward_context_idxs = []
@@ -245,7 +213,6 @@ class KITTIDataset(Dataset):
                 backward_context_idxs.append(c_idx)
         if c_idx < 0:
             return None, None
-
         # Forward context
         c_idx = f_idx
         forward_context_idxs = []
@@ -256,20 +223,16 @@ class KITTIDataset(Dataset):
                 forward_context_idxs.append(c_idx)
         if c_idx >= max_num_files:
             return None, None
-
         return backward_context_idxs, forward_context_idxs
-
     def _get_context_files(self, sample_name, idxs):
         """
         Returns image and depth context files
-
         Parameters
         ----------
         sample_name : str
             Name of current sample
         idxs : list of idxs
             Context indexes
-
         Returns
         -------
         image_context_paths : list of str
@@ -279,29 +242,23 @@ class KITTIDataset(Dataset):
         """
         image_context_paths = [self._get_next_file(i, sample_name) for i in idxs]
         return image_context_paths, None
-
 ########################################################################################################################
 #### POSE
 ########################################################################################################################
-
     def _get_imu2cam_transform(self, image_file):
         """Gets the transformation between IMU an camera from an image file"""
         parent_folder = self._get_parent_folder(image_file)
         if image_file in self.imu2velo_calib_cache:
             return self.imu2velo_calib_cache[image_file]
-
         cam2cam = read_calib_file(os.path.join(parent_folder, CALIB_FILE['cam2cam']))
         imu2velo = read_calib_file(os.path.join(parent_folder, CALIB_FILE['imu2velo']))
         velo2cam = read_calib_file(os.path.join(parent_folder, CALIB_FILE['velo2cam']))
-
         velo2cam_mat = transform_from_rot_trans(velo2cam['R'], velo2cam['T'])
         imu2velo_mat = transform_from_rot_trans(imu2velo['R'], imu2velo['T'])
         cam_2rect_mat = transform_from_rot_trans(cam2cam['R_rect_00'], np.zeros(3))
-
         imu2cam = cam_2rect_mat @ velo2cam_mat @ imu2velo_mat
         self.imu2velo_calib_cache[image_file] = imu2cam
         return imu2cam
-
     @staticmethod
     def _get_oxts_file(image_file):
         """Gets the oxts file from an image file."""
@@ -312,7 +269,6 @@ class KITTIDataset(Dataset):
                 return image_file.replace(IMAGE_FOLDER[cam], OXTS_POSE_DATA).replace('.png', '.txt')
         # Something went wrong (invalid image file)
         raise ValueError('Invalid KITTI path for pose supervision.')
-
     def _get_oxts_data(self, image_file):
         """Gets the oxts data from an image file."""
         oxts_file = self._get_oxts_file(image_file)
@@ -322,7 +278,6 @@ class KITTIDataset(Dataset):
             oxts_data = np.loadtxt(oxts_file, delimiter=' ', skiprows=0)
             self.oxts_cache[oxts_file] = oxts_data
         return oxts_data
-
     def _get_pose(self, image_file):
         """Gets the pose information from an image file."""
         if image_file in self.pose_cache:
@@ -348,13 +303,10 @@ class KITTIDataset(Dataset):
         # Cache and return pose
         self.pose_cache[image_file] = odo_pose
         return odo_pose
-
 ########################################################################################################################
-
     def __len__(self):
         """Dataset length."""
         return len(self.paths)
-
     def __getitem__(self, idx):
         """Get dataset sample given an index."""
         # Add image information
@@ -363,7 +315,6 @@ class KITTIDataset(Dataset):
             'filename': '%s_%010d' % (self.split, idx),
             'rgb': load_image(self.paths[idx]),
         }
-
         # Add intrinsics
         parent_folder = self._get_parent_folder(self.paths[idx])
         if parent_folder in self.calibration_cache:
@@ -374,13 +325,11 @@ class KITTIDataset(Dataset):
         sample.update({
             'intrinsics': self._get_intrinsics(self.paths[idx], c_data),
         })
-
         # Add pose information if requested
         if self.with_pose:
             sample.update({
                 'pose': self._get_pose(self.paths[idx]),
             })
-
         # Add depth information if requested
         if self.with_depth:
             # sample.update({s
@@ -392,7 +341,6 @@ class KITTIDataset(Dataset):
                 'input_depth': self._read_depth(self._get_depth_file(
                     self.paths[idx], self.input_depth_type)),
             })
-
         # Add context information if requested
         if self.with_context:
             # Add context images
@@ -413,12 +361,9 @@ class KITTIDataset(Dataset):
                 sample.update({
                     'pose_context': image_context_pose
                 })
-
         # Apply transformations
         if self.data_transform:
             sample = self.data_transform(sample)
-
         # Return sample
         return sample
-
 ########################################################################################################################

@@ -69,7 +69,7 @@ class PoseNet(nn.Module):
         # image = (image - 0.45) / 0.225
         # context[0] = (context[0] - 0.45) / 0.225
         # context[1] = (context[1] - 0.45) / 0.225
-         
+        # import pdb;pdb.set_trace()
         input = [image]
         input.extend(context)
         input = torch.cat(input, 1)

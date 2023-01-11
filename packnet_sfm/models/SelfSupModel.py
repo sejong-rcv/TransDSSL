@@ -80,7 +80,7 @@ class SelfSupModel(SfmModel):
             for logging and downstream usage.
         """
         # Calculate predicted depth and pose output
-         
+        # import pdb;pdb.set_trace()
         output = super().forward(batch, return_logs=return_logs, epoch=epoch)
         if not self.training:
             # If not training, no need for self-supervised loss

@@ -224,29 +224,29 @@ class MultiViewPhotometricLoss(LossBase):
                     photometric_loss[i], max=float(mean + self.clip_loss * std))
         # Return total photometric loss
         return photometric_loss
+    
 
     def compute_selfdistillation_loss(self, invdepth):
 
         final_disp = invdepth[0].detach()
-        selfdistillation_loss = 0
+        target_res = final_disp.shape[-2:]
+        supervised_loss = 0
         
         for i in range(1, len(invdepth)):
-            target_res = invdepth[i].shape[-2:]
-      
-            up2down_disp = F.interpolate(final_disp, target_res, mode="area", align_corners=None)
+            
+            down2up_disp = F.interpolate(invdepth[i], target_res, mode="area", align_corners=None)
             automask = F.interpolate(self.automask, target_res, mode="nearest")
-            # 
-            disp_diff = invdepth[i] - up2down_disp
+            disp_diff=down2up_disp-final_disp
             try:
-                selfdistillation_loss += (torch.abs(disp_diff) * automask).mean() / (len(invdepth)-1)
+                supervised_loss += (torch.abs(disp_diff) * automask).mean() / (len(invdepth)-1)
             except:
                 import pdb;pdb.set_trace()
 
         self.automask = None
 
-        self.add_metric('upflow_loss', selfdistillation_loss)
+        self.add_metric('upflow_loss', supervised_loss)
 
-        return selfdistillation_loss
+        return supervised_loss
 
     def reduce_photometric_loss(self, photometric_losses):
         """
@@ -281,17 +281,12 @@ class MultiViewPhotometricLoss(LossBase):
             ph_loss, mask = reduce_function(photometric_losses[i])
             if self.automask is None:
                 self.automask = mask
-            # ph_losses+= (ph_loss*self.automask).mean() / self.n
             ph_losses += ph_loss.mean() / self.n
         
-        # photometric_loss = sum([reduce_function(photometric_losses[i])[0].mean()
-        #                         for i in range(self.n)]) / self.n
-        # mask_loss = torch.abs(1-self.automask).mean() * 0.01
         
         # Store and return reduced photometric loss
         self.add_metric('photometric_loss', ph_losses)
-        # self.add_metric('mask_regularization_loss', mask_loss)
-
+        
         return ph_losses# + mask_loss
 
 ########################################################################################################################
@@ -382,7 +377,7 @@ class MultiViewPhotometricLoss(LossBase):
             scale = float(epoch) / float(max(1.0, self.warmup_step))
         else:
             scale = 1
-        
+
         loss += self.compute_selfdistillation_loss(inv_depths) * scale
         
         # Include smoothness loss if requested

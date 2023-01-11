@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=5 python3 scripts/train.py configs/train_kitti.yaml
+CUDA_VISIBLE_DEVICES=3 OMP_NUM_THREADS=5 python3 scripts/train.py configs/train_kitti.yaml

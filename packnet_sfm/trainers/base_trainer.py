@@ -45,10 +45,6 @@ class BaseTrainer:
         if self.checkpoint:
             self.checkpoint.check_and_save(module, output)
 
-    def save_model(self, module):
-        if self.checkpoint:
-            self.checkpoint.save_model(module)
-
     def train_progress_bar(self, dataloader, config, ncols=120):
         return tqdm(enumerate(dataloader, 0),
                     unit=' images', unit_scale=self.world_size * config.batch_size,
